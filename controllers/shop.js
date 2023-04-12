@@ -4,10 +4,6 @@ const Order = require("../models/order");
 const Product = require("../models/product");
 const User = require("../models/user");
 
-// used through user
-// const Cart = require("../models/cart");
-// const Order = require("../models/order");
-
 // For shop.js routes
 exports.getProducts = async (req, res, next) => {
   const products = await Product.find();
@@ -41,9 +37,6 @@ exports.getIndex = async (req, res, next) => {
     path: "/",
     isAuthenticated: req?.session?.isLoggedIn,
     csrfToken: req.csrfToken(),
-    // hasProducts: products.length > 0,
-    // activeShop: true,
-    // productCSS: true,
   });
 };
 
@@ -75,14 +68,14 @@ exports.postCartDeleteProduct = async (req, res, next) => {
 
 exports.postOrder = async (req, res, next) => {
   const userId = req.user._id;
-  const name = req.user.name;
+  const email = req.user.email;
   const {
     cart: { items: products },
   } = await User.findOne(req.user._id)
     .select("cart")
     .populate("cart.items.productId");
 
-  const order = new Order({ products, user: { userId, name } });
+  const order = new Order({ products, user: { userId, email } });
 
   await order.save();
   await req.user.clearCart();

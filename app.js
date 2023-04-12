@@ -5,6 +5,7 @@ const mongoose = require("mongoose");
 const session = require("express-session");
 const csrf = require("csurf");
 const MongoDBStore = require("connect-mongodb-session")(session);
+const flash = require("connect-flash");
 const User = require("./models/user");
 const errorController = require("./controllers/error");
 const adminRoutes = require("./routes/admin");
@@ -43,6 +44,7 @@ app.use(
 
 // Now in every post request, it will check if csrf token is coming from the views, cancel it if not.
 app.use(csrfProtection);
+app.use(flash());
 
 app.use(async (req, res, next) => {
   if (!req.session.user) {

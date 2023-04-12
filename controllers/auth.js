@@ -5,6 +5,8 @@ exports.getLogin = (req, res, next) => {
   res.render("auth/login", {
     path: "/login",
     pageTitle: "Login",
+    csrfToken: req.csrfToken(),
+    errorMessage: req.flash("error"),
     isAuthenticated: false,
   });
 };
@@ -24,6 +26,7 @@ exports.postLogin = async (req, res, next) => {
   const user = await User.findOne({ email });
 
   if (!user) {
+    req.flash("error", "Invalid email or password!");
     return res.redirect("/login");
   }
 
