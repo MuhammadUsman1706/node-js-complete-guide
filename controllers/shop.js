@@ -35,8 +35,6 @@ exports.getIndex = async (req, res, next) => {
     prods: products,
     pageTitle: "Shop",
     path: "/",
-    isAuthenticated: req?.session?.isLoggedIn,
-    csrfToken: req.csrfToken(),
   });
 };
 
@@ -85,6 +83,7 @@ exports.postOrder = async (req, res, next) => {
 
 exports.getOrders = async (req, res, next) => {
   const orders = await Order.find({ "user.userId": req.user }, "products");
+  // console.log(orders[0].products);
   res.render("shop/orders", {
     pageTitle: "Your Orders",
     path: "/orders",
