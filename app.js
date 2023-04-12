@@ -56,7 +56,13 @@ app.use(async (req, res, next) => {
   next();
 });
 
-// To register the routes here
+app.use((req, res, next) => {
+  // to make this available in every view
+  res.locals.isAuthenticated = req?.session?.isLoggedIn;
+  res.locals.csrfToken = req.csrfToken();
+  next();
+});
+
 app.use("/admin", adminRoutes);
 app.use(shopRoutes);
 app.use(authRoutes);
