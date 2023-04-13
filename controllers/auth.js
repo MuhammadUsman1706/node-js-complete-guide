@@ -2,20 +2,35 @@ const bcrypt = require("bcryptjs");
 const User = require("../models/user");
 
 exports.getLogin = (req, res, next) => {
+  let message = req.flash("error");
+  if (message.length > 0) {
+    message = message[0];
+  } else {
+    message = null;
+  }
+
   res.render("auth/login", {
     path: "/login",
     pageTitle: "Login",
     csrfToken: req.csrfToken(),
-    errorMessage: req.flash("error"),
+    errorMessage: message,
     isAuthenticated: false,
   });
 };
 
 exports.getSignup = (req, res, next) => {
+  let message = req.flash("error");
+  if (message.length > 0) {
+    message = message[0];
+  } else {
+    message = null;
+  }
+
   res.render("auth/signup", {
     path: "/signup",
     pageTitle: "Signup",
     isAuthenticated: false,
+    errorMessage: message,
   });
 };
 
@@ -33,6 +48,7 @@ exports.postLogin = async (req, res, next) => {
   const doMatch = await bcrypt.compare(password, user.password);
 
   if (!doMatch) {
+    req.flash("error", "Invalid email or password!");
     return res.redirect("/login");
   }
 
@@ -51,6 +67,7 @@ exports.postSignup = async (req, res, next) => {
   // To ensure that email does not already exist
   const userDoc = await User.findOne({ email });
   if (userDoc) {
+    req.flash("error", "Email already exists!");
     return res.redirect("/signup");
   }
   // 12 is the value of how complicated (secure) the encryption should be. Higher is more secure, but slower.
