@@ -78,7 +78,7 @@ exports.postEditProduct = async (req, res, next) => {
 };
 
 exports.getProducts = async (req, res, next) => {
-  const products = await Product.find();
+  const products = await Product.find({ userId: req.user._id });
   // .select("title price -_id") // to fetch selected data from a query
   // .populate("userId", "name"); // to populates any "ref Object Id" with the actual data automatically! Second param is opt
 

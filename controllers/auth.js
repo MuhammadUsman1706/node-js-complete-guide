@@ -1,12 +1,6 @@
+const crypto = require("crypto");
 const bcrypt = require("bcryptjs");
 const nodemailer = require("nodemailer");
-const sendGridTransport = require("nodemailer-sendgrid-transport");
-// My solution
-if (process.env.NODE_ENV !== "production") {
-  require("dotenv").config();
-}
-const sgMail = require("@sendgrid/mail");
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 const User = require("../models/user");
 
 // setup telling nodemailer how the emails will be delivered
@@ -39,9 +33,8 @@ exports.getLogin = (req, res, next) => {
   res.render("auth/login", {
     path: "/login",
     pageTitle: "Login",
-    csrfToken: req.csrfToken(),
+    // csrfToken: req.csrfToken(),
     errorMessage: message,
-    isAuthenticated: false,
   });
 };
 
@@ -56,7 +49,6 @@ exports.getSignup = (req, res, next) => {
   res.render("auth/signup", {
     path: "/signup",
     pageTitle: "Signup",
-    isAuthenticated: false,
     errorMessage: message,
   });
 };
@@ -97,6 +89,7 @@ exports.postSignup = async (req, res, next) => {
     req.flash("error", "Email already exists!");
     return res.redirect("/signup");
   }
+
   // 12 is the value of how complicated (secure) the encryption should be. Higher is more secure, but slower.
   const hashedPassword = await bcrypt.hash(password, 12);
 
@@ -105,27 +98,15 @@ exports.postSignup = async (req, res, next) => {
     password: hashedPassword,
     cart: { items: [] },
   });
-  // await user.save();
+  await user.save();
 
   // returns a promise so we can use await, but not necessary here
   transporter.sendMail({
     to: email,
-    from: "support@nodeshop.com",
+    from: "usman1706@hotmail.com",
     subject: "Sign Up Succeeded!",
     html: "<h1>You successfully signed up!</h1>",
   });
-
-  // try {
-  //   await sgMail.send({
-  //     to: email,
-  //     from: "usman1706@hotmail.com",
-  //     subject: "Sign Up Succeeded!",
-  //     text: "You successfully signed up!",
-  //     html: "<h1>You successfully signed up!</h1>",
-  //   });
-  // } catch (err) {
-  //   console.log(err);
-  // }
 
   res.redirect("/login");
 };
@@ -134,4 +115,100 @@ exports.postLogout = (req, res, next) => {
   req.session.destroy((err) => {
     res.redirect("/");
   });
+};
+
+exports.getReset = (req, res, next) => {
+  let message = req.flash("error");
+  if (message.length > 0) {
+    message = message[0];
+  } else {
+    message = null;
+  }
+
+  res.render("auth/reset", {
+    path: "/reset",
+    pageTitle: "Reset Password",
+    errorMessage: message,
+  });
+};
+
+exports.postReset = (req, res, next) => {
+  crypto.randomBytes(32, async (err, buffer) => {
+    if (err) {
+      console.log(err);
+      return res.redirect("/");
+    }
+
+    const email = req.body.email;
+    const token = buffer.toString("hex");
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      req.flash("error", "No account with that email found!");
+      return res.redirect("/reset");
+    }
+
+    user.resetToken = token;
+    user.resetExpirationToken = Date.now() + 3600000;
+    await user.save();
+
+    res.redirect("/");
+    transporter.sendMail({
+      to: email,
+      from: "usman1706@hotmail.com",
+      subject: "Password Reset",
+      html: `<p>You requested a password reset</p>
+      <p>Please click this <a href="http://localhost:3000/reset/${token}">link</a> to set a new password.</p>
+      `,
+    });
+  });
+};
+
+exports.getNewPassword = async (req, res, next) => {
+  const token = req.params.token;
+  // fetches user only if token hasn't expired
+  const user = await User.findOne({
+    resetToken: token,
+    resetExpirationToken: { $gt: Date.now() },
+  });
+
+  let message = req.flash("error");
+  if (message.length > 0) {
+    message = message[0];
+  } else {
+    message = null;
+  }
+
+  if (user)
+    res.render("auth/new-password", {
+      path: "/new-password",
+      pageTitle: "Update Password",
+      errorMessage: message,
+      userId: user._id.toString(),
+      passwordToken: token,
+    });
+  else res.redirect("/");
+};
+
+exports.postNewPassword = async (req, res, next) => {
+  const userId = req.body.userId;
+  const newPassword = req.body.password;
+  const passwordToken = req.body.passwordToken;
+
+  const user = await User.findOne({
+    _id: userId,
+    resetToken: passwordToken,
+    resetExpirationToken: { $gt: Date.now() },
+  });
+
+  if (user) {
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
+    user.password = hashedPassword;
+    user.resetToken = undefined;
+    user.resetExpirationToken = undefined;
+    await user.save();
+    res.redirect("/login");
+  } else {
+    res.redirect("/");
+  }
 };
