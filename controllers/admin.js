@@ -36,7 +36,7 @@ exports.postAddProduct = async (req, res, next) => {
 
 exports.postDeleteProduct = async (req, res, next) => {
   const productId = req.body.productId;
-  await Product.deleteOne({ _id: productId });
+  await Product.deleteOne({ _id: productId, userId: req.user._id });
   res.redirect("/admin/products");
 };
 
@@ -57,7 +57,7 @@ exports.getEditProduct = async (req, res, next) => {
     path: "/admin/edit-product",
     editing: editMode,
     product,
-    isAuthenticated: req?.session?.isLoggedIn,
+    // isAuthenticated: req?.session?.isLoggedIn,
     // productCSS: true,
     // formsCSS: true,
     // activeAddProduct: true,
@@ -67,6 +67,9 @@ exports.getEditProduct = async (req, res, next) => {
 exports.postEditProduct = async (req, res, next) => {
   const prodId = req.body.productId;
   const product = await Product.findById(prodId);
+
+  if (!req.user._id.toString() === product.userId.toString())
+    return res.redirect("/");
 
   product.title = req.body.title;
   product.price = req.body.price;
@@ -86,7 +89,7 @@ exports.getProducts = async (req, res, next) => {
     prods: products,
     pageTitle: "Admin Products",
     path: "/admin/products",
-    isAuthenticated: req?.session?.isLoggedIn,
+    // isAuthenticated: req?.session?.isLoggedIn,
     // hasProducts: products.length > 0,
     // activeShop: true,
     // productCSS: true,
