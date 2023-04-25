@@ -1,6 +1,7 @@
 const crypto = require("crypto");
 const bcrypt = require("bcryptjs");
 const nodemailer = require("nodemailer");
+const { validationResult } = require("express-validator");
 const User = require("../models/user");
 
 // setup telling nodemailer how the emails will be delivered
@@ -50,6 +51,7 @@ exports.getSignup = (req, res, next) => {
     path: "/signup",
     pageTitle: "Signup",
     errorMessage: message,
+    oldInput: { email: "", password: "", confirmPassword: "" },
   });
 };
 
@@ -83,11 +85,17 @@ exports.postSignup = async (req, res, next) => {
   const password = req.body.password;
   const confirmPassword = req.body.confirmPassword;
 
-  // To ensure that email does not already exist
-  const userDoc = await User.findOne({ email });
-  if (userDoc) {
-    req.flash("error", "Email already exists!");
-    return res.redirect("/signup");
+  const errors = validationResult(req);
+
+  // status 422 is for unsuccessful validation
+  if (!errors.isEmpty()) {
+    console.log(errors.array());
+    return res.status(422).render("auth/signup", {
+      path: "/signup",
+      pageTitle: "Signup",
+      errorMessage: errors.array()[0].msg,
+      oldInput: { email, password, confirmPassword },
+    });
   }
 
   // 12 is the value of how complicated (secure) the encryption should be. Higher is more secure, but slower.
