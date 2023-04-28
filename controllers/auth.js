@@ -36,6 +36,8 @@ exports.getLogin = (req, res, next) => {
     pageTitle: "Login",
     // csrfToken: req.csrfToken(),
     errorMessage: message,
+    oldInput: { email: "", password: "" },
+    validationErrors: [],
   });
 };
 
@@ -59,26 +61,40 @@ exports.getSignup = (req, res, next) => {
 exports.postLogin = async (req, res, next) => {
   const email = req.body.email;
   const password = req.body.password;
+  const errors = validationResult(req);
 
-  const user = await User.findOne({ email });
+  // const user = await User.findOne({ email });
 
-  if (!user) {
-    req.flash("error", "Invalid email or password!");
-    return res.redirect("/login");
+  // if (!user) {
+  //   req.flash("error", "Invalid email or password!");
+  //   return res.redirect("/login");
+  // }
+
+  // const doMatch = await bcrypt.compare(password, user.password);
+
+  // if (!doMatch) {
+  //   req.flash("error", "Invalid email or password!");
+  //   return res.redirect("/login");
+  // }
+
+  // req.session.isLoggedIn = true;
+  // req.session.user = user;
+  // req.session.save((err) => {
+  //   res.redirect("/");
+  // });
+
+  if (!errors.isEmpty()) {
+    console.log(errors.array());
+    return res.status(422).render("auth/login", {
+      path: "/login",
+      pageTitle: "Login",
+      errorMessage: errors.array()[0].msg,
+      oldInput: { email, password },
+      validationErrors: errors.array(),
+    });
   }
 
-  const doMatch = await bcrypt.compare(password, user.password);
-
-  if (!doMatch) {
-    req.flash("error", "Invalid email or password!");
-    return res.redirect("/login");
-  }
-
-  req.session.isLoggedIn = true;
-  req.session.user = user;
-  req.session.save((err) => {
-    res.redirect("/");
-  });
+  res.redirect("/");
 };
 
 exports.postSignup = async (req, res, next) => {

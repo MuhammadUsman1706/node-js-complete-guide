@@ -1,6 +1,7 @@
 const express = require("express");
 const { check, body } = require("express-validator");
 const User = require("../models/user");
+const bcrypt = require("bcryptjs");
 
 const authController = require("../controllers/auth");
 
@@ -10,7 +11,30 @@ router.get("/login", authController.getLogin);
 
 router.get("/signup", authController.getSignup);
 
-router.post("/login", authController.postLogin);
+router.post(
+  "/login",
+  [
+    body("email", "Please enter a valid email!")
+      .isEmail()
+      .custom(async (value, { req }) => {
+        const userDoc = await User.findOne({ email: value });
+        if (!userDoc) throw new Error("Invalid email or password!");
+
+        return true;
+      }),
+
+    body("password").custom(async (value, { req, res }) => {
+      const userDoc = await User.findOne({ email: req.body.email });
+      const doMatch = await bcrypt.compare(value, userDoc.password);
+      if (!doMatch) throw new Error("Invalid email or password!");
+      req.session.isLoggedIn = true;
+      req.session.user = userDoc;
+      req.session.save();
+      return true;
+    }),
+  ],
+  authController.postLogin
+);
 
 // Check takes the name of the input in the views and checks it through a built in funtion!
 router.post(
