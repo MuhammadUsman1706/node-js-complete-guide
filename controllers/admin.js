@@ -1,3 +1,4 @@
+const { validationResult } = require("express-validator");
 const Product = require("../models/product");
 
 // For app.js routes
@@ -10,10 +11,9 @@ exports.getAddProduct = (req, res, next) => {
     pageTitle: "Add Product",
     path: "/admin/add-product",
     editing: false,
-    isAuthenticated: req?.session?.isLoggedIn,
-    // productCSS: true,
-    // formsCSS: true,
-    // activeAddProduct: true,
+    hasError: false,
+    errorMessage: null,
+    validationErrors: [],
   });
 };
 
@@ -22,13 +22,24 @@ exports.postAddProduct = async (req, res, next) => {
   const imageUrl = req.body.imageUrl;
   const price = req.body.price;
   const description = req.body.description;
-  // Could also user req.user._id
-  const userId = req.user;
+  const userId = req.user; // can also use req.user._id
 
-  // Mongoose takes an object of required/defined parameters
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    console.log(errors.array());
+    return res.status(422).render("admin/edit-product", {
+      pageTitle: "Add Product",
+      path: "/admin/add-product",
+      editing: false,
+      hasError: true,
+      errorMessage: errors.array()[0].msg,
+      product: { title, imageUrl, price, description },
+      validationErrors: errors.array(),
+    });
+  }
+
   const product = new Product({ title, price, description, imageUrl, userId });
 
-  // Mongoose has a save method built in
   await product.save();
 
   res.redirect("/admin/products");
@@ -56,25 +67,43 @@ exports.getEditProduct = async (req, res, next) => {
     pageTitle: "Edit Product",
     path: "/admin/edit-product",
     editing: editMode,
+    hasError: false,
+    errorMessage: null,
     product,
-    // isAuthenticated: req?.session?.isLoggedIn,
-    // productCSS: true,
-    // formsCSS: true,
-    // activeAddProduct: true,
+    validationErrors: [],
   });
 };
 
 exports.postEditProduct = async (req, res, next) => {
   const prodId = req.body.productId;
-  const product = await Product.findById(prodId);
+  const title = req.body.title;
+  const price = req.body.price;
+  const description = req.body.description;
+  const imageUrl = req.body.imageUrl;
 
+  const product = await Product.findById(prodId);
   if (!req.user._id.toString() === product.userId.toString())
     return res.redirect("/");
 
-  product.title = req.body.title;
-  product.price = req.body.price;
-  product.description = req.body.description;
-  product.imageUrl = req.body.imageUrl;
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    console.log(errors.array());
+    return res.status(422).render("admin/edit-product", {
+      pageTitle: "Edit Product",
+      path: "/admin/add-product",
+      editing: true,
+      hasError: true,
+      errorMessage: errors.array()[0].msg,
+      product: { title, imageUrl, price, description },
+      validationErrors: errors.array(),
+      _id: prodId,
+    });
+  }
+
+  product.title = title;
+  product.price = price;
+  product.description = description;
+  product.imageUrl = imageUrl;
 
   await product.save();
   res.redirect("/admin/products");

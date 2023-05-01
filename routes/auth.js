@@ -21,17 +21,20 @@ router.post(
         if (!userDoc) throw new Error("Invalid email or password!");
 
         return true;
-      }),
+      })
+      .normalizeEmail(),
 
-    body("password").custom(async (value, { req, res }) => {
-      const userDoc = await User.findOne({ email: req.body.email });
-      const doMatch = await bcrypt.compare(value, userDoc.password);
-      if (!doMatch) throw new Error("Invalid email or password!");
-      req.session.isLoggedIn = true;
-      req.session.user = userDoc;
-      req.session.save();
-      return true;
-    }),
+    body("password")
+      .custom(async (value, { req, res }) => {
+        const userDoc = await User.findOne({ email: req.body.email });
+        const doMatch = await bcrypt.compare(value, userDoc.password);
+        if (!doMatch) throw new Error("Invalid email or password!");
+        req.session.isLoggedIn = true;
+        req.session.user = userDoc;
+        req.session.save();
+        return true;
+      })
+      .trim(),
   ],
   authController.postLogin
 );
@@ -49,7 +52,8 @@ router.post(
           throw new Error("Email already exists!");
         }
         return true;
-      }),
+      })
+      .normalizeEmail(),
     // body checks only body, where as check searches everywhere for given keyword, like params, headers, body, etc.
     body(
       "password",
@@ -61,7 +65,8 @@ router.post(
         if (value !== req.body.confirmPassword)
           throw new Error("Passwords do not match!");
         return true;
-      }),
+      })
+      .trim(),
   ],
   authController.postSignup
 );
