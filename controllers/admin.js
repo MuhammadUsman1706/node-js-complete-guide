@@ -18,6 +18,7 @@ exports.getAddProduct = (req, res, next) => {
 };
 
 exports.postAddProduct = async (req, res, next) => {
+  // const _id = new ObjectId("643facd308d746ed08de1a28");
   const title = req.body.title;
   const imageUrl = req.body.imageUrl;
   const price = req.body.price;
@@ -38,10 +39,23 @@ exports.postAddProduct = async (req, res, next) => {
     });
   }
 
-  const product = new Product({ title, price, description, imageUrl, userId });
+  try {
+    const product = new Product({
+      // _id,
+      title,
+      price,
+      description,
+      imageUrl,
+      userId,
+    });
 
-  await product.save();
-
+    await product.save();
+  } catch (err) {
+    const error = new Error(err);
+    error.httpStatus = 500;
+    return next(error);
+    // return res.redirect("/500");
+  }
   res.redirect("/admin/products");
 };
 
@@ -57,21 +71,27 @@ exports.getEditProduct = async (req, res, next) => {
     return res.redirect("/");
   }
 
-  const prodId = req.params.productId;
-  const product = await Product.findById(prodId);
-  if (!product) {
-    return res.redirect("/");
-  }
+  try {
+    const prodId = req.params.productId;
+    const product = await Product.findById(prodId);
+    if (!product) {
+      return res.redirect("/");
+    }
 
-  res.render("admin/edit-product", {
-    pageTitle: "Edit Product",
-    path: "/admin/edit-product",
-    editing: editMode,
-    hasError: false,
-    errorMessage: null,
-    product,
-    validationErrors: [],
-  });
+    res.render("admin/edit-product", {
+      pageTitle: "Edit Product",
+      path: "/admin/edit-product",
+      editing: editMode,
+      hasError: false,
+      errorMessage: null,
+      product,
+      validationErrors: [],
+    });
+  } catch (err) {
+    const error = new Error(err);
+    error.httpStatus = 500;
+    return next(error);
+  }
 };
 
 exports.postEditProduct = async (req, res, next) => {
