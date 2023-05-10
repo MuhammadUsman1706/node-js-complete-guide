@@ -1,6 +1,7 @@
 const express = require("express");
 const path = require("path");
 const bodyParser = require("body-parser");
+const multer = require("multer");
 const mongoose = require("mongoose");
 const session = require("express-session");
 const csrf = require("csurf");
@@ -26,10 +27,34 @@ const store = new MongoDBStore({
 });
 const csrfProtection = csrf();
 
+const fileStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    // A callback to store the image, first param is the error param to tell multer that file in invalid
+    cb(null, "images"); // folder name
+  },
+  filename: (req, file, cb) => {
+    // new Date => to avoid name clash, originalname => original name with extension
+    cb(null, `${new Date().toISOString()}-${file.originalname}`);
+  },
+});
+
+const fileFilter = (req, file, cb) => {
+  if (
+    file.mimetype === "image/png" ||
+    file.mimetype === "image/jpg" ||
+    file.mimetype === "image/jpeg"
+  ) {
+    cb(null, true);
+  } else cb(null, false);
+};
+
 app.set("view engine", "ejs");
 app.set("views", "views");
 
 app.use(bodyParser.urlencoded({ extended: false }));
+app.use(
+  multer({ dest: "images", storage: fileStorage, fileFilter }).single("image")
+); // single indicates it is for a single file, where as image is the input name
 app.use(express.static(path.join(__dirname, "public")));
 // express will encrypt the session ID according to the secret here, should be a long string in production
 // resave and saveUninitialized false means the session will not be saved on every incoming request or unnecessarily, but only when session is changed (for better performance)

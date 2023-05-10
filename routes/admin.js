@@ -18,7 +18,6 @@ router.post(
       .isLength({
         min: 3,
       }),
-    body("imageUrl", "Enter a valid image URL.").isURL(),
     body("price", "Enter a valid price.").isFloat(),
     body("description", "Description can be from 5-200 characters.").isLength({
       min: 5,
