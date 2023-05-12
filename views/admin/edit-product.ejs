@@ -15,7 +15,7 @@
 
                         <!-- enctype multipart indicates that the form will return not just text but mixed data (which urlencoded cannot handle) -->
                         <form class="product-form"
-                            action="/admin/<% if (editing) { %>edit-product<% } else { %>add-product<% } %>"
+                            action="/admin/<% if (editing) { %>edit-product<% } else { %>add-product<% } %>/?_csrf=<%= csrfToken %>"
                             method="POST" enctype="multipart/form-data">
                             <div class="form-control">
                                 <label for="title">Title</label>
