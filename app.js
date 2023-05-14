@@ -56,6 +56,7 @@ app.use(bodyParser.urlencoded({ extended: false }));
 //   multer({ dest: "images", storage: fileStorage, fileFilter }).single("image")
 // ); // single indicates it is for a single file, where as image is the input name
 app.use(express.static(path.join(__dirname, "public")));
+app.use("/images", express.static(path.join(__dirname, "images")));
 // express will encrypt the session ID according to the secret here, should be a long string in production
 // resave and saveUninitialized false means the session will not be saved on every incoming request or unnecessarily, but only when session is changed (for better performance)
 app.use(

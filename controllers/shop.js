@@ -1,5 +1,7 @@
 // There can be one-to-one relation between controller and routing files. But we can also split the files acccording to the routes we have inside the files, and thats what we're doing here.
 
+const fs = require("fs");
+const path = require("path");
 const Order = require("../models/order");
 const Product = require("../models/product");
 const User = require("../models/user");
@@ -97,5 +99,17 @@ exports.getCheckout = (req, res, next) => {
     pageTitle: "Checkout",
     path: "/checkout",
     isAuthenticated: req?.session?.isLoggedIn,
+  });
+};
+
+exports.getInvoice = (req, res, next) => {
+  const orderId = req.params.orderId;
+  const invoiceName = `invoice-${orderId}.pdf`;
+  const invoicePath = path.join("data", "invoices", invoiceName);
+  fs.readFile(invoicePath, (err, data) => {
+    if (err) console.log(err);
+    if (err) return next(err);
+
+    res.send(data);
   });
 };
