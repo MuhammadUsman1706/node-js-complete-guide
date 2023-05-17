@@ -57,6 +57,7 @@ router.post(
 router.get("/edit-product/:productId", isAuth, adminController.getEditProduct);
 router.post(
   "/edit-product",
+  upload.single("image"),
   [
     body("title", "Title must at least be 3 characters long.")
       .isString()

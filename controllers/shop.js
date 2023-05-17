@@ -2,6 +2,7 @@
 
 const fs = require("fs");
 const path = require("path");
+const PDFDocument = require("pdfkit");
 const Order = require("../models/order");
 const Product = require("../models/product");
 const User = require("../models/user");
@@ -102,14 +103,44 @@ exports.getCheckout = (req, res, next) => {
   });
 };
 
-exports.getInvoice = (req, res, next) => {
+exports.getInvoice = async (req, res, next) => {
   const orderId = req.params.orderId;
+
+  // To check whether the order belongs to the user (security)
+  const orderDetails = await Order.findById(orderId);
+  if (!orderDetails) return new Error("No order found.");
+
+  if (orderDetails.user.userId.toString() !== req.user._id.toString())
+    return next();
+
   const invoiceName = `invoice-${orderId}.pdf`;
   const invoicePath = path.join("data", "invoices", invoiceName);
-  fs.readFile(invoicePath, (err, data) => {
-    if (err) console.log(err);
-    if (err) return next(err);
 
-    res.send(data);
+  const pdfDoc = new PDFDocument();
+
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader("Content-Disposition", `inline; filename='${invoiceName}'`);
+
+  // After pipe, whatever we add in the PDF, gets forwarded into our drive/server as well the response
+  pdfDoc.pipe(fs.createWriteStream(invoicePath));
+  pdfDoc.pipe(res);
+
+  pdfDoc.fontSize(26).text("Invoice", { underline: true });
+  pdfDoc.text("------------------------------");
+  let totalPrice = 0;
+  orderDetails.products.map((prod) => {
+    totalPrice += prod.quantity * prod.productId.price;
+    pdfDoc
+      .fontSize(14)
+      .text(
+        `${prod.productId.title} - ${prod.quantity} x $${prod.productId.price}`
+      );
+    pdfDoc.text("---");
+    pdfDoc.fontSize(20).text(`Total Price: $${totalPrice}`);
   });
+  pdfDoc.end();
+
+  // In fs.readFile, node reads the whole file wasting the memory, while in stream a chunk is read and sent. Which is faster and lighter on mem.
+  // const file = fs.createReadStream(invoicePath);
+  // file.pipe(res);
 };

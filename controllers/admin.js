@@ -24,8 +24,6 @@ exports.postAddProduct = async (req, res, next) => {
   const description = req.body.description;
   const userId = req.user; // can also use req.user._id
 
-  console.log(image);
-
   if (!image) {
     return res.status(422).render("admin/edit-product", {
       pageTitle: "Add Product",
