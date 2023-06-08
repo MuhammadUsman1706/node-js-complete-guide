@@ -7,6 +7,8 @@ const Order = require("../models/order");
 const Product = require("../models/product");
 const User = require("../models/user");
 
+const ITEMS_PER_PAGE = 2;
+
 // For shop.js routes
 exports.getProducts = async (req, res, next) => {
   const products = await Product.find();
@@ -33,11 +35,26 @@ exports.getProduct = async (req, res, next) => {
 };
 
 exports.getIndex = async (req, res, next) => {
-  const products = await Product.find();
+  const page = req.query.page;
+  const numberOfProducts = Product.find().countDocuments();
+
+  // skipping all products of previous pages and then limit data to per page items to not get further data of pages ahead
+  const products = Product.find()
+    .skip((page - 1) * ITEMS_PER_PAGE)
+    .limit(ITEMS_PER_PAGE);
+
+  const promiseResolution = await Promise.all([numberOfProducts, products]);
+
   res.render("shop/index", {
-    prods: products,
+    prods: promiseResolution[1],
     pageTitle: "Shop",
     path: "/",
+    totalProducts: promiseResolution[0],
+    hasNextPage: promiseResolution[0] > page * ITEMS_PER_PAGE,
+    hasPreviousPage: page > 1,
+    nextPage: page++,
+    previousPage: page--,
+    lastPage: Math.ceil(promiseResolution[0] / ITEMS_PER_PAGE),
   });
 };
 
