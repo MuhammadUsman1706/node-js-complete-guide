@@ -11,15 +11,27 @@ const ITEMS_PER_PAGE = 2;
 
 // For shop.js routes
 exports.getProducts = async (req, res, next) => {
-  const products = await Product.find();
-  res.render("shop/product-list", {
-    prods: products,
-    pageTitle: "All Products",
+  const page = +req.query.page || 1;
+  const numberOfProducts = Product.find().countDocuments();
+
+  // skipping all products of previous pages and then limit data to per page items to not get further data of pages ahead
+  const products = Product.find()
+    .skip((page - 1) * ITEMS_PER_PAGE)
+    .limit(ITEMS_PER_PAGE);
+
+  const promiseResolution = await Promise.all([numberOfProducts, products]);
+
+  return res.render("shop/product-list", {
+    prods: promiseResolution[1],
+    pageTitle: "Products",
     path: "/products",
-    hasProducts: products.length > 0,
-    activeShop: true,
-    productCSS: true,
-    isAuthenticated: req?.session?.isLoggedIn,
+    totalProducts: promiseResolution[0],
+    hasNextPage: promiseResolution[0] > page * ITEMS_PER_PAGE,
+    hasPreviousPage: page > 1,
+    nextPage: page + 1,
+    previousPage: page - 1,
+    currentPage: page,
+    lastPage: Math.ceil(promiseResolution[0] / ITEMS_PER_PAGE),
   });
 };
 
@@ -35,7 +47,7 @@ exports.getProduct = async (req, res, next) => {
 };
 
 exports.getIndex = async (req, res, next) => {
-  const page = req.query.page;
+  const page = +req.query.page || 1;
   const numberOfProducts = Product.find().countDocuments();
 
   // skipping all products of previous pages and then limit data to per page items to not get further data of pages ahead
@@ -45,15 +57,16 @@ exports.getIndex = async (req, res, next) => {
 
   const promiseResolution = await Promise.all([numberOfProducts, products]);
 
-  res.render("shop/index", {
+  return res.render("shop/index", {
     prods: promiseResolution[1],
     pageTitle: "Shop",
     path: "/",
     totalProducts: promiseResolution[0],
     hasNextPage: promiseResolution[0] > page * ITEMS_PER_PAGE,
     hasPreviousPage: page > 1,
-    nextPage: page++,
-    previousPage: page--,
+    nextPage: page + 1,
+    previousPage: page - 1,
+    currentPage: page,
     lastPage: Math.ceil(promiseResolution[0] / ITEMS_PER_PAGE),
   });
 };
