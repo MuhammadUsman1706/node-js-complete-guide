@@ -114,6 +114,27 @@ exports.postOrder = async (req, res, next) => {
   res.redirect("/orders");
 };
 
+exports.getCheckout = async (req, res, next) => {
+  const {
+    cart: { items: products },
+  } = await User.findOne(req.user._id)
+    .select("cart")
+    .populate("cart.items.productId");
+
+  let totalSum = 0;
+
+  products.forEach((product) => {
+    totalSum += product.quantity * product.productId.price;
+  });
+
+  res.render("shop/checkout", {
+    path: "/checkout",
+    pageTitle: "Checkout",
+    products,
+    totalSum,
+  });
+};
+
 exports.getOrders = async (req, res, next) => {
   const orders = await Order.find({ "user.userId": req.user }, "products");
   // console.log(orders[0].products);
@@ -121,14 +142,6 @@ exports.getOrders = async (req, res, next) => {
     pageTitle: "Your Orders",
     path: "/orders",
     orders,
-    isAuthenticated: req?.session?.isLoggedIn,
-  });
-};
-
-exports.getCheckout = (req, res, next) => {
-  res.render("shop/checkout", {
-    pageTitle: "Checkout",
-    path: "/checkout",
     isAuthenticated: req?.session?.isLoggedIn,
   });
 };
