@@ -21,5 +21,14 @@
                     <h2>Total: <%= totalSum %>
                     </h2>
                 </div>
+                <div class="centered">
+                    <button id="order-btn" class="btn">ORDER</button>
+                    <script src="https://js.stripe.com/v3/"></script>
+                    <script>
+                        const stripe = Stripe('pk_test_51LuaywFyQOAmCXAb8dBP6curvUEXZf0ffRXxfb4UmZzrz5fvEcko3lI5GuHAoiTeGoand3s5ZKlAlgQD2VWQt5m200reIAnhVV');
+                        const orderBtn = document.getElementById("order-btn")
+                        orderBtn.addEventListener("click", function () { "4:00" })
+                    </script>
+                </div>
             </main>
             <%- include('../includes/end.ejs') %>
